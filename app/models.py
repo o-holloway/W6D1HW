@@ -1,7 +1,7 @@
 from . import db
 from datetime import datetime, timezone, timedelta
 
-class User(db.Model):
+class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=False)
