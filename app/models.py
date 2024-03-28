@@ -11,6 +11,7 @@ class Task(db.Model):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.save()
 
     def __repr__(self):
         return f"<Title {self.id}|{self.title}>"
