@@ -9,6 +9,7 @@ class User(db.Model):
     username = db.Column(db.String, nullable=False, unique=True)
     password = db.Column(db.String, nullable=False)
     date_created = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    tasks = db.relationship('Task', back_populates='author')
     token = db.Column(db.String, index=True, unique=True)
     token_expiration = db.Column(db.DateTime(timezone=True))
 
@@ -59,6 +60,8 @@ class Task(db.Model):
     completed = db.Column(db.Boolean, nullable=False, default=False)
     createdAt = db.Column(db.DateTime, nullable=False, default=lambda:datetime.now(timezone.utc))
     dueDate = db.Column(db.DateTime, nullable=False, default=lambda:datetime.now(timezone.utc) + timedelta(days=+1))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    author = db.relationship('User', back_populates='tasks')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -82,7 +85,8 @@ class Task(db.Model):
             "description": self.description,
             "completed": self.completed,
             "createdAt": self.createdAt,
-            "dueDate": self.dueDate
+            "dueDate": self.dueDate,
+            "author": self.author.to_dict()
         }
         
     def get_token(self):
