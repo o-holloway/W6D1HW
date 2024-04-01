@@ -89,11 +89,9 @@ class Task(db.Model):
             "author": self.author.to_dict()
         }
         
-    def get_token(self):
-        now = datetime.now(timezone.utc)
-        if self.token and self.token_expiration > now + timedelta(minutes=1):
-            return {"token": self.token, "tokenExpiration": self.token_expiration}
-        self.token = secrets.token_hex(16)
-        self.token_expiration = now + timedelta(hours=1)
+    def update(self, **kwargs):
+        allowed_fields = {'title', 'description', 'dueDate'}
+        for key, value in kwargs.items():
+            if key in allowed_fields:
+                setattr(self, key, value)
         self.save()
-        return {"token": self.token, "tokenExpiration": self.token_expiration}

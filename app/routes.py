@@ -47,7 +47,7 @@ def get_tasks():
     select_stmt = db.select(Task)
     search = request.args.get('search')
     if search:
-        select_stmt = select_stmt.where((Task.title.ilike(f"%{search}%")) | (Task.body.ilike(f"%{search}%"))) #searches in title or body
+        select_stmt = select_stmt.where((Task.title.ilike(f"%{search}%")) | (Task.description.ilike(f"%{search}%"))) #searches in title or body
     # Get the tasks from the database
     tasks = db.session.execute(select_stmt).scalars().all()
     return [p.to_dict() for p in tasks]
