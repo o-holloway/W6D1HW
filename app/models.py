@@ -42,6 +42,13 @@ class User(db.Model):
             "email": self.email,
             "dateCreated": self.date_created
         }
+        
+    def update(self, **kwargs):
+        allowed_fields = {'email', 'username', 'password'}
+        for key, value in kwargs.items():
+            if key in allowed_fields:
+                setattr(self, key, value)
+        self.save()
     
     def get_token(self):
         now = datetime.now(timezone.utc)

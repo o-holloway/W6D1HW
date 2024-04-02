@@ -52,6 +52,17 @@ def get_tasks():
     tasks = db.session.execute(select_stmt).scalars().all()
     return [p.to_dict() for p in tasks]
 
+#Return all users as JSON object
+@app.route('/users')
+def get_users():
+    select_stmt = db.select(User)
+    search = request.args.get('search')
+    if search:
+        select_stmt = select_stmt.where((User.username.ilike(f"%{search}%")) | (User.email.ilike(f"%{search}%"))) #searches in username or email
+    # Get the tasks from the database
+    users = db.session.execute(select_stmt).scalars().all()
+    return [p.to_dict() for p in users]
+
 #Get a single task by ID
 @app.route('/tasks/<int:task_id>')
 def get_task(task_id):
@@ -61,6 +72,16 @@ def get_task(task_id):
         return task.to_dict()
     else:
         return {'error': f"Task with an ID of {task_id} does not exist"}, 404
+    
+#Get a single user by ID
+@app.route('/users/<int:user_id>')
+def get_user(user_id):
+    # Get the task from the database by ID
+    user = db.session.get(User, user_id)
+    if user:
+        return user.to_dict()
+    else:
+        return {'error': f"User with an ID of {user_id} does not exist"}, 404
 
 #Create a task
 @app.route('/tasks', methods=['POST'])
@@ -98,7 +119,7 @@ def create_task():
 def edit_task(task_id):
     # Check to see that they have a JSON body
     if not request.is_json:
-        return {'error': 'You content-type must be application/json'}, 400
+        return {'error': 'Content-type must be application/json'}, 400
     # Find the task in the db
     task = db.session.get(Task, task_id)
     if task is None:
@@ -115,6 +136,29 @@ def edit_task(task_id):
     task.update(**data)
     return task.to_dict()
 
+# Update User
+@app.route('/users/<int:user_id>', methods=['PUT'])
+@token_auth.login_required
+def edit_user(user_id):
+    # Check to see that they have a JSON body
+    if not request.is_json:
+        return {'error': 'Content-type must be application/json'}, 400
+    # Find the user in the db
+    user = db.session.get(User, user_id)
+    if user is None:
+        return {'error': f"User with ID #{user_id} does not exist"}, 404
+    # Get the current user based on the token
+    current_user = token_auth.current_user()
+    # Check if the current user is the user editing
+    if current_user is not user:
+        return {'error': "Not authorized to edit this user!"}, 403
+    
+    # Get the data from the request
+    data = request.json
+    # Pass that data into the task's update method
+    user.update(**data)
+    return user.to_dict()
+
 #Delete a Task
 @app.route('/tasks/<int:task_id>', methods=['DELETE'])
 @token_auth.login_required
@@ -130,3 +174,19 @@ def delete_task(task_id):
     #Delete the task
     task.delete()
     return {'success': f"{task.title} was successfully deleted"}, 200
+
+#Delete a User
+@app.route('/users/<int:user_id>', methods=['DELETE'])
+@token_auth.login_required
+def delete_user(user_id):
+    # based on user_id parameter check to see User exists
+    user = db.session.get(User, user_id)
+    if user is None:
+        return {'error': f'User with ID #{user_id} does not exist. Please try again'}, 404
+    #Ensure user trying to delete user is authorized
+    current_user = token_auth.current_user()
+    if user is not current_user:
+        return {'error': 'Not authorized to delete this user!'}, 403
+    #Delete the user
+    user.delete()
+    return {'success': f"{user.username} was successfully deleted"}, 200
